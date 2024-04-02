@@ -9,11 +9,50 @@ describe 'duo_unix::pam_ssh_config' do
 
       it { is_expected.to compile }
 
-      it {
-        is_expected.to contain_augeas('Duo Security SSH Configuration')
-          .with_context('/files/etc/ssh/sshd_config')
-          .with_changes(['set UsePAM yes', 'set UseDNS no', 'set ChallengeResponseAuthentication yes'])
-      }
+      case os_facts[:osfamily]
+      when 'RedHat'
+        keyonly = true
+        context "keyonly", if: keyonly do
+          let(:params) { {'keyonly' => true } }
+          it {
+            is_expected.to contain_augeas('Duo Security SSH Configuration')
+              .with_context('/files/etc/ssh/sshd_config')
+              .with_changes([
+                'set UsePAM yes',
+                'set UseDNS no',
+                'set ChallengeResponseAuthentication yes',
+                'set ExposeAuthInfo yes',
+                'set AuthenticationMethods "publickey,keyboard-interactive:pam"'
+              ])
+          }
+        end
+        
+        keyonly = false
+        context "not-keyonly", if: !keyonly do
+          let(:params) { {'keyonly' => false } }
+          it {
+            is_expected.to contain_augeas('Duo Security SSH Configuration')
+              .with_context('/files/etc/ssh/sshd_config')
+              .with_changes([
+                'set UsePAM yes',
+                'set UseDNS no',
+                'set ChallengeResponseAuthentication yes',
+                'set ExposeAuthInfo yes',
+                'set AuthenticationMethods "gssapi-with-mic,keyboard-interactive:pam publickey,keyboard-interactive:pam keyboard-interactive:pam,keyboard-interactive:pam"'
+              ])
+          }
+        end
+      else 
+        it {
+          is_expected.to contain_augeas('Duo Security SSH Configuration')
+            .with_context('/files/etc/ssh/sshd_config')
+            .with_changes([
+              'set UsePAM yes',
+              'set UseDNS no',
+              'set ChallengeResponseAuthentication yes'
+            ])
+        }
+      end
     end
   end
 end
