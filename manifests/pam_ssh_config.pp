@@ -41,7 +41,7 @@ class duo_unix::pam_ssh_config (
 
     if (!defined(Package[$duo_unix::params::pam_ssh_user_auth_package])) {
       package { $duo_unix::params::pam_ssh_user_auth_package:
-        ensure => $package_ensure,
+        ensure => $duo_unix::params::package_ensure,
       }
     }
   }
